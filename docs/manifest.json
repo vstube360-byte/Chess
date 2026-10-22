@@ -1,0 +1,21 @@
+{
+    "name": "Chess",
+    "short_name": "Chess",
+    "description": "Minimalist Offline Chess with Maia Chess Neural Network Bots and Stockfish",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#161512",
+    "theme_color": "#161512",
+    "icons": [
+        {
+            "src": "./favicon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "./favicon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

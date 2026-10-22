@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#161512">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>Chess</title>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Main Game Area -->
+        <main class="game-area">
+            <!-- Top Player Bar -->
+            <div class="player-bar top-bar">
+                <div class="player-info">
+                    <span class="player-name" id="top-player-name">Black</span>
+                    <div class="captured-tray" id="top-captured"></div>
+                    <span class="material-advantage" id="top-advantage"></span>
+                </div>
+                <div class="clock-badge" id="clock-top">10:00</div>
+            </div>
+
+            <!-- Opening Banner -->
+            <div class="opening-banner" id="opening-banner" style="display: none;">
+                <span class="opening-name" id="opening-name">Italian Game</span>
+            </div>
+
+            <!-- Board Area with Real-Time Engine Evaluation Bar -->
+            <div class="board-with-eval">
+                <div class="eval-bar-wrapper" id="eval-bar-wrapper" title="Engine Evaluation">
+                    <div class="eval-bar-inner">
+                        <div class="eval-bar-fill" id="eval-bar-fill" style="height: 50%;"></div>
+                        <span class="eval-bar-score" id="eval-bar-score">0.0</span>
+                    </div>
+                </div>
+
+                <!-- Board Wrapper with Touch Isolation -->
+                <div class="board-wrapper">
+                    <div class="board-container" id="board-container"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Player Bar -->
+            <div class="player-bar bottom-bar">
+                <div class="player-info">
+                    <span class="player-name" id="bottom-player-name">White</span>
+                    <div class="captured-tray" id="bottom-captured"></div>
+                    <span class="material-advantage" id="bottom-advantage"></span>
+                </div>
+                <div class="clock-badge active-clock" id="clock-bottom">10:00</div>
+            </div>
+        </main>
+
+        <!-- Sidebar / Control Panel (Responsive for iPad) -->
+        <aside class="sidebar">
+            <!-- Quick Actions Toolbar -->
+            <div class="toolbar">
+                <button id="btn-new-game" class="tool-btn" title="Start New Game">New</button>
+                <button id="btn-resign" class="tool-btn" title="Resign Game">Resign</button>
+                <button id="btn-undo" class="tool-btn" title="Undo Move">Undo</button>
+                <button id="btn-redo" class="tool-btn" title="Redo Move">Redo</button>
+                <button id="btn-hint" class="tool-btn" title="Best Move Hint">Hint</button>
+                <button id="btn-draw" class="tool-btn" title="Offer / Agree to Draw">Draw</button>
+                <button id="btn-autoflip" class="tool-btn active-btn" title="Auto-flip on turn in Pass & Play">Auto</button>
+                <button id="btn-flip-board" class="tool-btn" title="Flip Board">Flip</button>
+                <button id="btn-table-mode" class="tool-btn" title="Table Mode (180° Black piece rotation)">Table</button>
+                <button id="btn-sound" class="tool-btn" title="Mute / Unmute"><span id="sound-label">Sound</span></button>
+            </div>
+
+            <!-- Game Settings -->
+            <div class="settings-box">
+                <div class="setting-row">
+                    <label for="select-mode">Mode</label>
+                    <select id="select-mode">
+                        <option value="pass_and_play">Pass & Play (2 Players)</option>
+                        <option value="vs_bot_white">Play vs Bot (You: White)</option>
+                        <option value="vs_bot_black">Play vs Bot (You: Black)</option>
+                    </select>
+                </div>
+                <div class="setting-row" id="row-difficulty" style="display: none;">
+                    <label for="select-difficulty">Bot Level</label>
+                    <select id="select-difficulty">
+                        <option value="bot_400">Maia 1100 Casual (800 Elo)</option>
+                        <option value="bot_700">Maia 1100 Relaxed (1000 Elo)</option>
+                        <option value="bot_1000">Maia 1100 (1100 Elo)</option>
+                        <option value="bot_1300">Maia 1300 (1300 Elo)</option>
+                        <option value="bot_1600" selected>Maia 1500 (1500 Elo)</option>
+                        <option value="bot_1900">Maia 1700 (1700 Elo)</option>
+                        <option value="bot_2200">Maia 1900 (1900 Elo)</option>
+                        <option value="bot_2500">Maia 1900 Sharp (2100 Elo)</option>
+                        <option value="bot_2800">Stockfish Master (2600 Elo)</option>
+                        <option value="bot_3000">Stockfish Engine (3000 Elo)</option>
+                    </select>
+                </div>
+                <div class="setting-row" id="row-time">
+                    <label for="select-time">Clock</label>
+                    <select id="select-time">
+                        <option value="180">3 min (Blitz)</option>
+                        <option value="300">5 min (Blitz)</option>
+                        <option value="600" selected>10 min (Rapid)</option>
+                        <option value="900">15 min (Rapid)</option>
+                        <option value="custom">Custom...</option>
+                        <option value="0">Unlimited (No Timer)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label for="select-theme">Theme</label>
+                    <select id="select-theme">
+                        <option value="wood" selected>Classic Wood</option>
+                        <option value="green">Tournament Green</option>
+                        <option value="blue">Ocean Blue</option>
+                        <option value="purple">Royal Amethyst</option>
+                        <option value="dark">Dark Slate</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Move History -->
+            <div class="history-card" id="history-card">
+                <div class="history-header">
+                    <span>Move History</span>
+                    <button id="btn-copy-pgn" class="mini-btn" title="Copy PGN text">Copy PGN</button>
+                </div>
+                <div class="notation-list" id="notation-list"></div>
+            </div>
+
+            <!-- Game Status -->
+            <div class="status-bar" id="status-bar">
+                White to move
+            </div>
+        </aside>
+    </div>
+
+    <!-- Custom Time Dialog Modal -->
+    <div id="modal-custom-time" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <h3 class="modal-title">Custom Timer</h3>
+            <p class="modal-subtitle">Enter game duration in minutes per player (1 to 180):</p>
+            <div class="modal-input-row">
+                <input type="number" id="input-custom-minutes" min="1" max="180" value="10" />
+                <span class="modal-unit">min</span>
+            </div>
+            <div class="modal-actions">
+                <button id="btn-custom-cancel" class="modal-btn cancel">Cancel</button>
+                <button id="btn-custom-set" class="modal-btn apply">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Draw Offer Modal -->
+    <div id="modal-draw-offer" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <h3 class="modal-title">Draw Offer</h3>
+            <p class="modal-subtitle" id="draw-offer-text">A draw has been offered. Do you accept?</p>
+            <div class="modal-actions">
+                <button id="btn-draw-decline" class="modal-btn cancel">Decline</button>
+                <button id="btn-draw-accept" class="modal-btn apply">Accept Draw</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./ort.min.js"></script>
+    <script type="module" src="./main.js"></script>
+</body>
+
+</html>
