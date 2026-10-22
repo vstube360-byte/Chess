@@ -481,6 +481,76 @@ html, body {
     pointer-events: none;
 }
 
+/* Offline Cache Loader Box */
+.offline-box {
+    display: flex;
+    flex-direction: column;
+    background-color: #161513;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(129, 182, 76, 0.28);
+}
+
+.offline-btn {
+    width: 100%;
+    height: 34px;
+    background-color: #222B1B;
+    color: #81B64C;
+    border: 1px solid #81B64C;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.offline-btn:hover {
+    background-color: #2C3823;
+    color: #A3D96C;
+}
+
+.offline-btn:active {
+    transform: scale(0.98);
+}
+
+.offline-progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.offline-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #B8B5B0;
+}
+
+#offline-progress-pct {
+    font-family: 'JetBrains Mono', monospace;
+    color: #81B64C;
+}
+
+.offline-progress-track {
+    width: 100%;
+    height: 6px;
+    background-color: #23211D;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.offline-progress-bar {
+    height: 100%;
+    background-color: #81B64C;
+    width: 0%;
+    transition: width 0.15s ease;
+}
+
 /* Settings Box */
 .settings-box {
     display: flex;

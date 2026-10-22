@@ -75,6 +75,22 @@
                 <button id="btn-sound" class="tool-btn" title="Mute / Unmute"><span id="sound-label">Sound</span></button>
             </div>
 
+            <!-- Offline Cache Button & Progress (Disappears once loaded offline) -->
+            <div class="offline-box" id="offline-box">
+                <button id="btn-load-offline" class="offline-btn" title="Download all bots, models, and game files into browser cache for offline play">
+                    Download for Offline Use
+                </button>
+                <div class="offline-progress-container" id="offline-progress-container" style="display: none;">
+                    <div class="offline-progress-header">
+                        <span id="offline-progress-label">Saving to local cache...</span>
+                        <span id="offline-progress-pct">0%</span>
+                    </div>
+                    <div class="offline-progress-track">
+                        <div class="offline-progress-bar" id="offline-progress-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Game Settings -->
             <div class="settings-box">
                 <div class="setting-row">

@@ -16,6 +16,7 @@ const PRECACHE_ASSETS = [
     "./chess_game.js",
     "./ai_player.js",
     "./maia_engine.js",
+    "./analysis_board.js",
     "./board_builder.js",
     "./board_element.js",
     "./board_position.js",
