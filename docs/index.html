@@ -132,17 +132,34 @@
                     <select id="select-theme">
                         <option value="wood" selected>Classic Wood</option>
                         <option value="green">Tournament Green</option>
+                        <option value="walnut">Warm Walnut</option>
                         <option value="blue">Ocean Blue</option>
                         <option value="purple">Royal Amethyst</option>
+                        <option value="classic">Marble Classic</option>
                         <option value="dark">Dark Slate</option>
                     </select>
+                </div>
+                <div class="theme-swatches" id="theme-swatches" aria-label="Quick Board Theme">
+                    <button type="button" class="theme-swatch active" data-theme="wood" title="Classic Wood"></button>
+                    <button type="button" class="theme-swatch" data-theme="green" title="Tournament Green"></button>
+                    <button type="button" class="theme-swatch" data-theme="walnut" title="Warm Walnut"></button>
+                    <button type="button" class="theme-swatch" data-theme="blue" title="Ocean Blue"></button>
+                    <button type="button" class="theme-swatch" data-theme="purple" title="Royal Amethyst"></button>
+                    <button type="button" class="theme-swatch" data-theme="classic" title="Marble Classic"></button>
+                    <button type="button" class="theme-swatch" data-theme="dark" title="Dark Slate"></button>
                 </div>
             </div>
 
             <!-- Move History -->
             <div class="history-card" id="history-card">
                 <div class="history-header">
-                    <span>Move History</span>
+                    <span>Moves</span>
+                    <div class="history-nav">
+                        <button id="btn-nav-first" class="nav-btn" title="Start Position (Home)">⏮</button>
+                        <button id="btn-nav-prev" class="nav-btn" title="Previous Move (Left Arrow)">◀</button>
+                        <button id="btn-nav-next" class="nav-btn" title="Next Move (Right Arrow)">▶</button>
+                        <button id="btn-nav-last" class="nav-btn" title="Latest Position (End)">⏭</button>
+                    </div>
                     <button id="btn-copy-pgn" class="mini-btn" title="Copy PGN text">Copy PGN</button>
                 </div>
                 <div class="notation-list" id="notation-list"></div>

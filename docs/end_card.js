@@ -133,6 +133,7 @@ export class EndCard {
         reviewBtn.classList.add("btn-review");
         reviewBtn.innerText = "Review Board";
         reviewBtn.addEventListener("click", () => {
+            this.parent.endCardDismissed = true;
             card.remove();
         });
         actions.appendChild(reviewBtn);

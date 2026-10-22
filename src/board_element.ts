@@ -152,13 +152,35 @@ export class BoardElement {
         this.repaint();
     }
 
-    repaint(): void {
-        this.clearPreviousBoard();
-        this.paintLastMoveHighlights();
+    repaint(previewSnapshot: any = null): void {
+        if (previewSnapshot) {
+            this.clearPreviousBoard(true);
+            this.paintLastMoveHighlights(previewSnapshot.lastMoves);
+            this.paintSnapshotBoard(previewSnapshot.board);
+            return;
+        }
+        this.clearPreviousBoard(false);
+        this.paintLastMoveHighlights(this.game.lastMoves);
         this.paintPieces(this.game.getPieces());
     }
 
-    clearPreviousBoard(): void {
+    paintSnapshotBoard(board: any): void {
+        if (!board) return;
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                const cell = board[i]?.[j];
+                if (!cell || cell.name === "empty") continue;
+                const tile = this.grid[i]?.[j];
+                if (!tile) continue;
+                const img = document.createElement("img");
+                img.classList.add("chess-piece");
+                img.src = `assets/${cell.name}_${cell.colour}.png`;
+                tile.appendChild(img);
+            }
+        }
+    }
+
+    clearPreviousBoard(skipCaptureFade: boolean = false): void {
         document.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
         document.querySelectorAll(".markerdot").forEach(el => el.remove());
         document.querySelectorAll(".markercircle").forEach(el => el.remove());
@@ -167,7 +189,7 @@ export class BoardElement {
         document.querySelectorAll(".fading-piece").forEach(el => el.remove());
 
         let capturedPos: BoardPosition | null = null;
-        if (this.game.lastMoves) {
+        if (!skipCaptureFade && this.game.lastMoves) {
             const unhandledMove = this.game.lastMoves.find(m => !m.animated && m.captured);
             if (unhandledMove && unhandledMove.captured) {
                 capturedPos = unhandledMove.captured.position;
@@ -203,9 +225,9 @@ export class BoardElement {
         }
     }
 
-    paintLastMoveHighlights(): void {
-        if (this.game.lastMoves && this.game.lastMoves.length > 0) {
-            const primaryMove = this.game.lastMoves[0];
+    paintLastMoveHighlights(moves: any = this.game.lastMoves): void {
+        if (moves && moves.length > 0) {
+            const primaryMove = moves[0];
             const fromTile = this.grid[primaryMove.from.i]?.[primaryMove.from.j];
             const toTile = this.grid[primaryMove.to.i]?.[primaryMove.to.j];
             if (fromTile) fromTile.classList.add("last-move");
@@ -347,7 +369,7 @@ export class BoardElement {
         tile.dataset.col = j.toString();
 
         tile.addEventListener("pointerdown", (e: PointerEvent) => {
-            if (this.parent.isAITurn()) return;
+            if (this.parent.isAITurn() || (this.parent.isViewingHistory && this.parent.isViewingHistory())) return;
             this.activePointerId = e.pointerId;
             this.dragStartTile = { i, j };
             this.dragStartPos = { x: e.clientX, y: e.clientY };

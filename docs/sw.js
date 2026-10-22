@@ -1,4 +1,4 @@
-const CACHE_NAME = "chess-offline-cache-v1";
+const CACHE_NAME = "chess-offline-cache-v2";
 
 const PRECACHE_ASSETS = [
     "./",

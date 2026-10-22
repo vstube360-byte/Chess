@@ -370,8 +370,27 @@ html, body {
 .board-container[data-theme="green"] .blackbg {
     background-color: #779556;
 }
-.board-container[data-theme="green"] .coord {
-    color: #4A6335;
+.board-container[data-theme="green"] .whitebg .coord {
+    color: #779556;
+}
+.board-container[data-theme="green"] .blackbg .coord {
+    color: #EBECD0;
+}
+
+.board-container[data-theme="walnut"] {
+    background-image: none !important;
+}
+.board-container[data-theme="walnut"] .whitebg {
+    background-color: #F0D9B5;
+}
+.board-container[data-theme="walnut"] .blackbg {
+    background-color: #B58863;
+}
+.board-container[data-theme="walnut"] .whitebg .coord {
+    color: #B58863;
+}
+.board-container[data-theme="walnut"] .blackbg .coord {
+    color: #F0D9B5;
 }
 
 .board-container[data-theme="blue"] {
@@ -383,8 +402,11 @@ html, body {
 .board-container[data-theme="blue"] .blackbg {
     background-color: #4B7399;
 }
-.board-container[data-theme="blue"] .coord {
-    color: #2D4C6B;
+.board-container[data-theme="blue"] .whitebg .coord {
+    color: #4B7399;
+}
+.board-container[data-theme="blue"] .blackbg .coord {
+    color: #DEE3E6;
 }
 
 .board-container[data-theme="purple"] {
@@ -396,8 +418,27 @@ html, body {
 .board-container[data-theme="purple"] .blackbg {
     background-color: #7D5295;
 }
-.board-container[data-theme="purple"] .coord {
-    color: #4D2D61;
+.board-container[data-theme="purple"] .whitebg .coord {
+    color: #7D5295;
+}
+.board-container[data-theme="purple"] .blackbg .coord {
+    color: #ECE5EF;
+}
+
+.board-container[data-theme="classic"] {
+    background-image: none !important;
+}
+.board-container[data-theme="classic"] .whitebg {
+    background-color: #E8E6E1;
+}
+.board-container[data-theme="classic"] .blackbg {
+    background-color: #7C7872;
+}
+.board-container[data-theme="classic"] .whitebg .coord {
+    color: #7C7872;
+}
+.board-container[data-theme="classic"] .blackbg .coord {
+    color: #E8E6E1;
 }
 
 .board-container[data-theme="dark"] {
@@ -409,8 +450,11 @@ html, body {
 .board-container[data-theme="dark"] .blackbg {
     background-color: #2F3237;
 }
-.board-container[data-theme="dark"] .coord {
-    color: #A0A5AA;
+.board-container[data-theme="dark"] .whitebg .coord {
+    color: #2F3237;
+}
+.board-container[data-theme="dark"] .blackbg .coord {
+    color: #C7CCD1;
 }
 
 /* ==========================================================================
@@ -592,6 +636,56 @@ html, body {
     transition: border-color 0.15s ease;
 }
 
+.theme-swatches {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-top: 2px;
+}
+
+.theme-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.theme-swatch:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.theme-swatch.active {
+    border-color: #81B64C;
+    box-shadow: 0 0 0 1px #81B64C;
+}
+
+.theme-swatch[data-theme="wood"] {
+    background: linear-gradient(135deg, #E2C69F 50%, #9E6B43 50%);
+}
+.theme-swatch[data-theme="green"] {
+    background: linear-gradient(135deg, #EBECD0 50%, #779556 50%);
+}
+.theme-swatch[data-theme="walnut"] {
+    background: linear-gradient(135deg, #F0D9B5 50%, #B58863 50%);
+}
+.theme-swatch[data-theme="blue"] {
+    background: linear-gradient(135deg, #DEE3E6 50%, #4B7399 50%);
+}
+.theme-swatch[data-theme="purple"] {
+    background: linear-gradient(135deg, #ECE5EF 50%, #7D5295 50%);
+}
+.theme-swatch[data-theme="classic"] {
+    background: linear-gradient(135deg, #E8E6E1 50%, #7C7872 50%);
+}
+.theme-swatch[data-theme="dark"] {
+    background: linear-gradient(135deg, #7E8287 50%, #2F3237 50%);
+}
+
 /* Puzzle Dashboard Card */
 .puzzle-card {
     display: flex;
@@ -710,6 +804,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 6px;
     padding: 6px 10px;
     background-color: #1C1A17;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -718,6 +813,44 @@ html, body {
     color: #7E7B76;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.history-nav {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.nav-btn {
+    background-color: #23211D;
+    color: #B8B5B0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    font-size: 10px;
+    width: 24px;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background-color: #2C2925;
+    color: #FFFFFF;
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.nav-btn:active:not(:disabled) {
+    background-color: #81B64C;
+    color: #FFFFFF;
+}
+
+.nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 .mini-btn {
@@ -755,9 +888,10 @@ html, body {
 .notation-row {
     display: flex;
     align-items: center;
-    padding: 3px 6px;
+    padding: 2px 4px;
     border-radius: 3px;
     font-size: 12px;
+    gap: 2px;
 }
 
 .notation-row:nth-child(even) {
@@ -776,6 +910,28 @@ html, body {
     flex: 1;
     font-weight: 500;
     color: #D6D4D0;
+    padding: 2px 5px;
+    border-radius: 3px;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.notation-white.clickable-move,
+.notation-black.clickable-move {
+    cursor: pointer;
+}
+
+.notation-white.clickable-move:hover,
+.notation-black.clickable-move:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+}
+
+.notation-white.active-move,
+.notation-black.active-move {
+    background-color: rgba(129, 182, 76, 0.25);
+    color: #A3D96C;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(129, 182, 76, 0.5);
 }
 
 /* Move Quality Badges */
@@ -827,6 +983,12 @@ html, body {
 .status-bar.thinking {
     color: #7EB7F2;
     border-color: rgba(126, 183, 242, 0.35);
+}
+
+.status-bar.viewing-history {
+    color: #F5C563;
+    border-color: rgba(245, 197, 99, 0.38);
+    cursor: pointer;
 }
 
 /* ==========================================================================
