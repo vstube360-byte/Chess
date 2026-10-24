@@ -27,10 +27,31 @@ html, body {
     -webkit-user-select: none;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    transition: background-color 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(circle at 42% 50%, var(--ambient-glow, rgba(181, 136, 99, 0.08)) 0%, transparent 68%);
+    transition: background 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.65s ease;
+}
+
+body[data-theme="wood"] { background-color: #161513; --ambient-glow: rgba(185, 135, 85, 0.09); }
+body[data-theme="green"] { background-color: #141713; --ambient-glow: rgba(119, 149, 86, 0.11); }
+body[data-theme="walnut"] { background-color: #171412; --ambient-glow: rgba(181, 136, 99, 0.11); }
+body[data-theme="blue"] { background-color: #12161A; --ambient-glow: rgba(75, 115, 153, 0.13); }
+body[data-theme="purple"] { background-color: #161319; --ambient-glow: rgba(125, 82, 149, 0.13); }
+body[data-theme="classic"] { background-color: #151515; --ambient-glow: rgba(140, 136, 130, 0.09); }
+body[data-theme="dark"] { background-color: #111214; --ambient-glow: rgba(95, 105, 118, 0.11); }
 
 /* App Container Layout */
 .app-container {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -300,12 +321,34 @@ html, body {
     width: var(--board-size);
     display: flex;
     flex-wrap: wrap;
+    background-color: #2A241E;
+    position: relative;
+    touch-action: none; /* Prevents iPad gesture interference */
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s ease;
+}
+
+.board-container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
     background-image: url("chessboard.png");
     background-size: 100% 100%;
     background-repeat: no-repeat;
     background-position: center;
-    position: relative;
-    touch-action: none; /* Prevents iPad gesture interference */
+    pointer-events: none;
+    z-index: 0;
+    opacity: 1;
+    transition: opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.board-container.theme-transitioning {
+    animation: boardThemePulse 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes boardThemePulse {
+    0% { transform: scale(1); }
+    35% { transform: scale(0.992); }
+    100% { transform: scale(1); }
 }
 
 /* Tiles */
@@ -317,8 +360,13 @@ html, body {
     justify-content: center;
     cursor: pointer;
     position: relative;
+    z-index: 1;
     box-sizing: border-box;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.22s ease;
+}
+
+.board-container.theme-transitioning .boardtile {
+    transition: background-color 0.44s cubic-bezier(0.22, 1, 0.36, 1) var(--tile-delay, 0ms);
 }
 
 .whitebg, .blackbg {
@@ -333,6 +381,7 @@ html, body {
     font-weight: 700;
     user-select: none;
     line-height: 1;
+    transition: color 0.38s ease var(--tile-delay, 0ms);
 }
 
 .coord-file {
@@ -440,9 +489,15 @@ html, body {
 }
 
 /* Board Themes */
-.board-container[data-theme="green"] {
-    background-image: none !important;
+.board-container[data-theme="green"]::before,
+.board-container[data-theme="walnut"]::before,
+.board-container[data-theme="blue"]::before,
+.board-container[data-theme="purple"]::before,
+.board-container[data-theme="classic"]::before,
+.board-container[data-theme="dark"]::before {
+    opacity: 0;
 }
+
 .board-container[data-theme="green"] .whitebg {
     background-color: #EBECD0;
 }
@@ -456,9 +511,6 @@ html, body {
     color: #EBECD0;
 }
 
-.board-container[data-theme="walnut"] {
-    background-image: none !important;
-}
 .board-container[data-theme="walnut"] .whitebg {
     background-color: #F0D9B5;
 }
@@ -472,9 +524,6 @@ html, body {
     color: #F0D9B5;
 }
 
-.board-container[data-theme="blue"] {
-    background-image: none !important;
-}
 .board-container[data-theme="blue"] .whitebg {
     background-color: #DEE3E6;
 }
@@ -488,9 +537,6 @@ html, body {
     color: #DEE3E6;
 }
 
-.board-container[data-theme="purple"] {
-    background-image: none !important;
-}
 .board-container[data-theme="purple"] .whitebg {
     background-color: #ECE5EF;
 }
@@ -504,9 +550,6 @@ html, body {
     color: #ECE5EF;
 }
 
-.board-container[data-theme="classic"] {
-    background-image: none !important;
-}
 .board-container[data-theme="classic"] .whitebg {
     background-color: #E8E6E1;
 }
@@ -520,9 +563,6 @@ html, body {
     color: #E8E6E1;
 }
 
-.board-container[data-theme="dark"] {
-    background-image: none !important;
-}
 .board-container[data-theme="dark"] .whitebg {
     background-color: #7E8287;
 }

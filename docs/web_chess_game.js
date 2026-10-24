@@ -51,12 +51,28 @@ export class WebChessGame {
 
     loadSavedTheme() {
         const savedTheme = localStorage.getItem("chess_board_theme") || "wood";
-        this.setTheme(savedTheme);
+        this.setTheme(savedTheme, false);
     }
 
-    setTheme(theme) {
+    setTheme(theme, animate = true) {
         this.currentTheme = theme;
         localStorage.setItem("chess_board_theme", theme);
+        document.body.setAttribute("data-theme", theme);
+
+        if (animate) {
+            if (this.themeAnimTimeout) clearTimeout(this.themeAnimTimeout);
+            this.boardContainer.classList.add("theme-transitioning");
+            if (this.secondaryBoardContainer) {
+                this.secondaryBoardContainer.classList.add("theme-transitioning");
+            }
+            this.themeAnimTimeout = setTimeout(() => {
+                this.boardContainer.classList.remove("theme-transitioning");
+                if (this.secondaryBoardContainer) {
+                    this.secondaryBoardContainer.classList.remove("theme-transitioning");
+                }
+            }, 680);
+        }
+
         this.boardContainer.setAttribute("data-theme", theme);
         if (this.secondaryBoardContainer) {
             this.secondaryBoardContainer.setAttribute("data-theme", theme);

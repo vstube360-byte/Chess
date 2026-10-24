@@ -383,6 +383,7 @@ export class BoardElement {
                 const j = cols[c];
                 const paint = (i + j) % 2 === 0 ? "whitebg" : "blackbg";
                 const tile = this.createTile(paint, i, j);
+                tile.style.setProperty("--tile-delay", `${(r + c) * 16}ms`);
 
                 // Add coordinates
                 // Rank numbers on leftmost column (c === 0)
