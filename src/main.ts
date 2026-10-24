@@ -1,8 +1,8 @@
 import { WebChessGame } from './web_chess_game.js';
 import { maiaEngine } from './maia_engine.js';
 
-const CACHE_NAME = "chess-offline-cache-v5";
-const OFFLINE_FLAG_KEY = "chess_offline_complete_v5";
+const CACHE_NAME = "chess-offline-cache-v6";
+const OFFLINE_FLAG_KEY = "chess_offline_complete_v6";
 
 const OFFLINE_ASSETS = [
     { url: "./index.html", label: "App Shell" },
