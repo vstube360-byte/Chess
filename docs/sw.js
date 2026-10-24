@@ -5,7 +5,7 @@ const PRECACHE_ASSETS = [
     "./index.html",
     "./style.css",
     "./manifest.json",
-    "./favicon.png",
+    "./icon.png",
     "./chessboard.png",
     "./ort.min.js",
     "./ort-wasm-simd-threaded.mjs",

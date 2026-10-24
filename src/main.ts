@@ -8,7 +8,7 @@ const OFFLINE_ASSETS = [
     { url: "./index.html", label: "App Shell" },
     { url: "./style.css", label: "Stylesheet" },
     { url: "./manifest.json", label: "Web Manifest" },
-    { url: "./favicon.png", label: "App Icon" },
+    { url: "./icon.png", label: "App Icon" },
     { url: "./chessboard.png", label: "Chessboard Texture" },
     { url: "./main.js", label: "Core App Script" },
     { url: "./web_chess_game.js", label: "Game Controller" },
