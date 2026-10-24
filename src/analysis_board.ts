@@ -12,6 +12,7 @@ export class AnalysisBoard {
     constructor(boardState: Piece[][], friendlyColour: string) {
 
         this.colour = friendlyColour;
+        let hasPrimaryKing = false;
 
         for (let i = 0; i < 8; i++) {
             const line: string[] = [];
@@ -20,8 +21,9 @@ export class AnalysisBoard {
                 const piece: Piece = boardState[i][j];
 
                 if (piece.colour == friendlyColour) {
-                    if (piece.name == "king") {
-                        line.push("start")
+                    if (piece.name == "king" && !hasPrimaryKing) {
+                        hasPrimaryKing = true;
+                        line.push("start");
                     } else {
                         line.push("wall");
                     }
@@ -47,7 +49,7 @@ export class AnalysisBoard {
         }
     }
 
-    getKingPosition(): BoardPosition {
+    getKingPosition(): BoardPosition | null {
 
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -57,12 +59,13 @@ export class AnalysisBoard {
             }
         }
 
-        return new BoardPosition(0, 0);
+        return null;
     }
 
     isSafe() {
 
-        const position: BoardPosition = this.getKingPosition();
+        const position: BoardPosition | null = this.getKingPosition();
+        if (!position) return true;
         if (this.kingIsThreatened(position)) {
             return false;
         }

@@ -927,8 +927,19 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
     transition: all 0.12s ease;
+}
+
+.palette-piece-btn:active {
+    cursor: grabbing;
+}
+
+.boardtile.drop-target-hover {
+    background-color: rgba(129, 182, 76, 0.45) !important;
+    box-shadow: inset 0 0 0 2px #81B64C;
 }
 
 .palette-piece-btn:hover {

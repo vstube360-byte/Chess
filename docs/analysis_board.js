@@ -5,12 +5,14 @@ export class AnalysisBoard {
         this.kingPosition = new BoardPosition(0, 0);
         this.threats = [];
         this.colour = friendlyColour;
+        let hasPrimaryKing = false;
         for (let i = 0; i < 8; i++) {
             const line = [];
             for (let j = 0; j < 8; j++) {
                 const piece = boardState[i][j];
                 if (piece.colour == friendlyColour) {
-                    if (piece.name == "king") {
+                    if (piece.name == "king" && !hasPrimaryKing) {
+                        hasPrimaryKing = true;
                         line.push("start");
                     }
                     else {
@@ -43,10 +45,11 @@ export class AnalysisBoard {
                 }
             }
         }
-        return new BoardPosition(0, 0);
+        return null;
     }
     isSafe() {
         const position = this.getKingPosition();
+        if (!position) return true;
         if (this.kingIsThreatened(position)) {
             return false;
         }

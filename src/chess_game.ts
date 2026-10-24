@@ -728,13 +728,12 @@ export class ChessGame implements Subject {
         if (!this.validCoordinates(fromI, fromJ) || !this.validCoordinates(toI, toJ)) return false;
         if (fromI === toI && fromJ === toJ) return false;
         const src = this.boardState[fromI][fromJ];
-        const dst = this.boardState[toI][toJ];
         if (!src || src instanceof EmptyPiece) return false;
-        if (!(dst instanceof EmptyPiece)) return false;
 
         const name = src.name;
         const colour = src.colour;
         this.removePiece(fromI, fromJ);
+        this.removePiece(toI, toJ);
         this.boardState[toI][toJ] = this.createPieceByName(name, colour, toI, toJ);
         this.lastMoves = [];
         this.moveTracker.active = false;
@@ -770,8 +769,6 @@ export class ChessGame implements Subject {
     public validateAndStartCustomGame(startingColour: string = "w"): { valid: boolean; error?: string } {
         let whiteKings = 0;
         let blackKings = 0;
-        let whiteKingPos: BoardPosition | null = null;
-        let blackKingPos: BoardPosition | null = null;
 
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
@@ -781,35 +778,17 @@ export class ChessGame implements Subject {
                 if (p instanceof King) {
                     if (p.colour === "w") {
                         whiteKings++;
-                        whiteKingPos = new BoardPosition(i, j);
                     } else {
                         blackKings++;
-                        blackKingPos = new BoardPosition(i, j);
-                    }
-                } else if (p instanceof Pawn) {
-                    if (i === 0 || i === 7) {
-                        return { valid: false, error: "Pawns cannot be placed on the 1st or 8th rank." };
                     }
                 }
             }
         }
 
-        if (whiteKings !== 1 || blackKings !== 1) {
+        if (whiteKings < 1 || blackKings < 1) {
             return {
                 valid: false,
-                error: `Board must have 1 White King (${whiteKings}) and 1 Black King (${blackKings}).`
-            };
-        }
-
-        const nonMovingColour = startingColour === "w" ? "b" : "w";
-        const nonMovingKingPos = nonMovingColour === "w" ? whiteKingPos : blackKingPos;
-        const analysis = new AnalysisBoard(this.boardState, nonMovingColour);
-        if (nonMovingKingPos && analysis.kingIsThreatened(nonMovingKingPos)) {
-            const nonMovingName = nonMovingColour === "w" ? "White" : "Black";
-            const startingName = startingColour === "w" ? "White" : "Black";
-            return {
-                valid: false,
-                error: `${nonMovingName} King cannot already be in check when ${startingName} is to move.`
+                error: `Board needs at least 1 White King (${whiteKings}) and 1 Black King (${blackKings}).`
             };
         }
 

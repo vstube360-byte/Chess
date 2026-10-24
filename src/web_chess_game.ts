@@ -536,6 +536,7 @@ export class WebChessGame {
             });
         }
         document.querySelectorAll(".palette-piece-btn").forEach((btn) => {
+            btn.addEventListener("dragstart", (e) => e.preventDefault());
             btn.addEventListener("click", () => {
                 const name = btn.getAttribute("data-piece");
                 const colour = btn.getAttribute("data-colour");
@@ -543,7 +544,20 @@ export class WebChessGame {
                     this.setEditorTool("place", { name, colour });
                 }
             });
+            btn.addEventListener("pointerdown", (e: Event) => {
+                const pe = e as PointerEvent;
+                if (pe.button !== undefined && pe.button !== 0 && pe.pointerType === "mouse") return;
+                const name = btn.getAttribute("data-piece");
+                const colour = btn.getAttribute("data-colour");
+                if (!name || !colour) return;
+                pe.preventDefault();
+                this.setEditorTool("place", { name, colour });
+                this.startPaletteDrag(pe, name, colour);
+            });
         });
+        window.addEventListener("pointermove", (e: PointerEvent) => this.handlePalettePointerMove(e), { passive: false });
+        window.addEventListener("pointerup", (e: PointerEvent) => this.handlePalettePointerUp(e));
+        window.addEventListener("pointercancel", (e: PointerEvent) => this.handlePalettePointerUp(e));
         if (selectEditorPlayMode) {
             selectEditorPlayMode.addEventListener("change", () => {
                 this.syncModePanels();
@@ -553,6 +567,110 @@ export class WebChessGame {
         if (btnPlayFromHere) {
             btnPlayFromHere.addEventListener("click", () => this.startCustomGameFromEditor());
         }
+    }
+
+    private paletteDragState: {
+        pointerId: number;
+        startX: number;
+        startY: number;
+        name: string;
+        colour: string;
+        isDragging: boolean;
+        ghost: HTMLImageElement | null;
+    } | null = null;
+
+    private startPaletteDrag(e: PointerEvent, name: string, colour: string): void {
+        this.cancelPaletteDrag();
+        this.paletteDragState = {
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            name,
+            colour,
+            isDragging: false,
+            ghost: null
+        };
+    }
+
+    private handlePalettePointerMove(e: PointerEvent): void {
+        if (!this.paletteDragState || this.paletteDragState.pointerId !== e.pointerId) return;
+
+        const dx = e.clientX - this.paletteDragState.startX;
+        const dy = e.clientY - this.paletteDragState.startY;
+
+        if (!this.paletteDragState.isDragging && Math.hypot(dx, dy) > 4) {
+            this.paletteDragState.isDragging = true;
+            const boardRect = this.boardContainer ? this.boardContainer.getBoundingClientRect() : null;
+            const tileSize = boardRect && boardRect.width > 0 ? (boardRect.width / 8) : 64;
+
+            const ghost = document.createElement("img");
+            ghost.src = `assets/${this.paletteDragState.name}_${this.paletteDragState.colour}.png`;
+            ghost.className = "chess-piece dragging-piece";
+            ghost.style.width = `${tileSize}px`;
+            ghost.style.height = `${tileSize}px`;
+            if (this.boardElement && this.boardElement.tableMode && this.paletteDragState.colour === "b") {
+                ghost.style.transform = "rotate(180deg)";
+            }
+            document.body.appendChild(ghost);
+            this.paletteDragState.ghost = ghost;
+        }
+
+        if (this.paletteDragState.isDragging && this.paletteDragState.ghost) {
+            if (e.cancelable) e.preventDefault();
+            const ghost = this.paletteDragState.ghost;
+            const rect = ghost.getBoundingClientRect();
+            ghost.style.left = `${e.clientX - rect.width / 2}px`;
+            ghost.style.top = `${e.clientY - rect.height / 2}px`;
+
+            document.querySelectorAll(".drop-target-hover").forEach(el => el.classList.remove("drop-target-hover"));
+            ghost.style.display = "none";
+            const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+            ghost.style.display = "";
+            const hoverTile = elUnder ? elUnder.closest(".boardtile") : null;
+            if (hoverTile) {
+                hoverTile.classList.add("drop-target-hover");
+            }
+        }
+    }
+
+    private handlePalettePointerUp(e: PointerEvent): void {
+        if (!this.paletteDragState || this.paletteDragState.pointerId !== e.pointerId) return;
+
+        document.querySelectorAll(".drop-target-hover").forEach(el => el.classList.remove("drop-target-hover"));
+
+        if (this.paletteDragState.isDragging && this.paletteDragState.ghost) {
+            this.paletteDragState.ghost.style.display = "none";
+            const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+            const targetTile = elUnder ? elUnder.closest(".boardtile") as HTMLElement | null : null;
+
+            if (targetTile && targetTile.dataset.row !== undefined && targetTile.dataset.col !== undefined) {
+                const targetI = parseInt(targetTile.dataset.row, 10);
+                const targetJ = parseInt(targetTile.dataset.col, 10);
+                this.placeEditorPiece(
+                    new BoardPosition(targetI, targetJ),
+                    this.paletteDragState.name,
+                    this.paletteDragState.colour
+                );
+            }
+        }
+
+        this.cancelPaletteDrag();
+    }
+
+    private cancelPaletteDrag(): void {
+        document.querySelectorAll(".drop-target-hover").forEach(el => el.classList.remove("drop-target-hover"));
+        if (this.paletteDragState && this.paletteDragState.ghost) {
+            this.paletteDragState.ghost.remove();
+        }
+        this.paletteDragState = null;
+    }
+
+    public placeEditorPiece(position: BoardPosition, name: string, colour: string): void {
+        this.pushUndoSnapshot();
+        this.game.setEditorPiece(position.i, position.j, name, colour);
+        this.editorSelectedSquare = null;
+        this.soundManager.playMove();
+        this.refresh();
     }
 
     public setEditorTool(tool: "move" | "erase" | "place", palettePiece: { name: string; colour: string } | null = null): void {
@@ -601,19 +719,10 @@ export class WebChessGame {
 
         if (this.editorTool === "place" && this.editorPalettePiece) {
             const existing = this.game.boardState[position.i]?.[position.j];
-            if (!existing || existing.name === "empty") {
-                this.pushUndoSnapshot();
-                this.game.setEditorPiece(position.i, position.j, this.editorPalettePiece.name, this.editorPalettePiece.colour);
-                this.soundManager.playMove();
-                this.refresh();
-            } else if (existing.name === this.editorPalettePiece.name && existing.colour === this.editorPalettePiece.colour) {
+            if (existing && existing.name === this.editorPalettePiece.name && existing.colour === this.editorPalettePiece.colour) {
                 this.handleEditorErase(position);
             } else {
-                const statusEl = document.getElementById("status-bar");
-                if (statusEl) {
-                    statusEl.innerText = "Square is occupied — tap an empty square or use Erase first.";
-                    statusEl.className = "status-bar viewing-history";
-                }
+                this.placeEditorPiece(position, this.editorPalettePiece.name, this.editorPalettePiece.colour);
             }
             return;
         }
@@ -623,11 +732,8 @@ export class WebChessGame {
             if (this.editorSelectedSquare.i === position.i && this.editorSelectedSquare.j === position.j) {
                 this.editorSelectedSquare = null;
                 this.refresh();
-            } else if (!clickedPiece || clickedPiece.name === "empty") {
-                this.handleEditorDragDrop(this.editorSelectedSquare, position);
             } else {
-                this.editorSelectedSquare = position;
-                this.refresh();
+                this.handleEditorDragDrop(this.editorSelectedSquare, position);
             }
         } else if (clickedPiece && clickedPiece.name !== "empty") {
             this.editorSelectedSquare = position;
@@ -636,24 +742,13 @@ export class WebChessGame {
     }
 
     public handleEditorDragDrop(fromPos: BoardPosition, toPos: BoardPosition): void {
-        const dest = this.game.boardState[toPos.i]?.[toPos.j];
-        if (!dest || dest.name === "empty") {
-            this.pushUndoSnapshot();
-            const moved = this.game.moveEditorPiece(fromPos.i, fromPos.j, toPos.i, toPos.j);
-            this.editorSelectedSquare = null;
-            if (moved) {
-                this.soundManager.playMove();
-            }
-            this.refresh();
-        } else {
-            this.editorSelectedSquare = null;
-            this.refresh();
-            const statusEl = document.getElementById("status-bar");
-            if (statusEl) {
-                statusEl.innerText = "Square is occupied — move to an empty square or use Erase.";
-                statusEl.className = "status-bar viewing-history";
-            }
+        this.pushUndoSnapshot();
+        const moved = this.game.moveEditorPiece(fromPos.i, fromPos.j, toPos.i, toPos.j);
+        this.editorSelectedSquare = null;
+        if (moved) {
+            this.soundManager.playMove();
         }
+        this.refresh();
     }
 
     public handleEditorErase(pos: BoardPosition): void {
@@ -1569,11 +1664,11 @@ export class WebChessGame {
             } else if (this.editorTool === "place" && this.editorPalettePiece) {
                 const colName = this.editorPalettePiece.colour === "w" ? "White" : "Black";
                 const pName = this.editorPalettePiece.name.charAt(0).toUpperCase() + this.editorPalettePiece.name.slice(1);
-                statusEl.innerText = `Placing ${colName} ${pName} — Tap any empty square`;
+                statusEl.innerText = `Placing ${colName} ${pName} — Drag onto board or tap any square`;
             } else if (this.editorSelectedSquare) {
-                statusEl.innerText = "Tap any empty square to move selected piece";
+                statusEl.innerText = "Tap any square to move selected piece";
             } else {
-                statusEl.innerText = "Freeform Setup — Drag/move pieces or pick from palette";
+                statusEl.innerText = "Freeform Setup — Drag pieces from palette onto the board";
             }
             statusEl.className = "status-bar";
             return;

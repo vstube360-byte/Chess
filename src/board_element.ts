@@ -65,7 +65,7 @@ export class BoardElement {
 
         if (!this.isDragging && Math.hypot(dx, dy) > 8) {
             const startPiece = this.game.boardState[this.dragStartTile.i][this.dragStartTile.j];
-            const isFreeformMove = this.parent.gameMode === "freeform" && this.parent.editorTool === "move";
+            const isFreeformMove = this.parent.gameMode === "freeform" && this.parent.editorTool !== "erase";
             const canDragPiece = startPiece && !(startPiece instanceof EmptyPiece) &&
                 (isFreeformMove || startPiece.colour === this.game.getTurnPlayer());
 
@@ -104,16 +104,26 @@ export class BoardElement {
             const rect = this.dragGhost.getBoundingClientRect();
             this.dragGhost.style.left = `${e.clientX - rect.width / 2}px`;
             this.dragGhost.style.top = `${e.clientY - rect.height / 2}px`;
+
+            document.querySelectorAll(".drop-target-hover").forEach(el => el.classList.remove("drop-target-hover"));
+            this.dragGhost.style.display = "none";
+            const elUnder = document.elementFromPoint(e.clientX, e.clientY);
+            this.dragGhost.style.display = "";
+            const hoverTile = elUnder ? elUnder.closest(".boardtile") as HTMLElement | null : null;
+            if (hoverTile) {
+                hoverTile.classList.add("drop-target-hover");
+            }
         }
     }
 
     private handlePointerUp(e: PointerEvent): void {
+        document.querySelectorAll(".drop-target-hover").forEach(el => el.classList.remove("drop-target-hover"));
         if (this.isDragging && this.dragGhost && this.dragStartTile) {
             this.dragGhost.style.display = "none";
             const elUnder = document.elementFromPoint(e.clientX, e.clientY);
             const targetTile = elUnder ? elUnder.closest(".boardtile") as HTMLElement | null : null;
 
-            if (this.parent.gameMode === "freeform" && this.parent.editorTool === "move") {
+            if (this.parent.gameMode === "freeform" && this.parent.editorTool !== "erase") {
                 if (targetTile && targetTile.dataset.row !== undefined && targetTile.dataset.col !== undefined) {
                     const targetI = parseInt(targetTile.dataset.row, 10);
                     const targetJ = parseInt(targetTile.dataset.col, 10);
