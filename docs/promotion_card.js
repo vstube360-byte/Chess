@@ -6,14 +6,15 @@ export class PromotionCard {
     }
     deriveEndCard(game) {
         const piece = game.getPromotingPawn();
-        const colour = (piece.colour == "b") ? "Black" : "White";
-        const bigText = `Promote ${colour} Pawn`;
-        const subText = "Select a piece to promote to:";
-        return this.createEndCard(bigText, subText);
+        const colourCode = piece.colour === "b" ? "b" : "w";
+        const colourName = colourCode === "b" ? "Black" : "White";
+        const bigText = `Promote ${colourName} Pawn`;
+        const subText = "Choose a piece to promote to:";
+        return this.createEndCard(bigText, subText, colourCode);
     }
-    createEndCard(bigText, subText) {
+    createEndCard(bigText, subText, colourCode) {
         const card = document.createElement("div");
-        card.classList.add("end-card");
+        card.classList.add("end-card", "promotion-picker-card");
 
         const header1 = document.createElement("h2");
         header1.innerText = bigText;
@@ -24,21 +25,34 @@ export class PromotionCard {
         desc.innerText = subText;
         card.appendChild(desc);
 
-        const actions = document.createElement("div");
-        actions.classList.add("end-card-actions");
+        const grid = document.createElement("div");
+        grid.classList.add("promotion-grid");
 
         const options = ["Queen", "Rook", "Bishop", "Knight"];
         for (let i = 0; i < options.length; i++) {
             const optionText = options[i];
             const optionBtn = document.createElement("button");
-            optionBtn.className = i === 0 ? "btn-play-again" : "btn-review";
-            optionBtn.innerText = optionText;
+            optionBtn.type = "button";
+            optionBtn.className = `promotion-piece-btn${i === 0 ? " primary-choice" : ""}`;
+            optionBtn.title = `Promote to ${optionText}`;
+
+            const img = document.createElement("img");
+            img.className = "promotion-piece-img";
+            img.src = `assets/${optionText.toLowerCase()}_${colourCode}.png`;
+            img.alt = optionText;
+
+            const label = document.createElement("span");
+            label.className = "promotion-piece-label";
+            label.innerText = optionText;
+
+            optionBtn.appendChild(img);
+            optionBtn.appendChild(label);
             optionBtn.addEventListener("click", () => {
                 this.submitChoice(optionText);
             });
-            actions.appendChild(optionBtn);
+            grid.appendChild(optionBtn);
         }
-        card.appendChild(actions);
+        card.appendChild(grid);
         return card;
     }
     submitChoice(text) {
