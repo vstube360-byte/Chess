@@ -99,6 +99,7 @@
                         <option value="pass_and_play">Pass & Play (2 Players)</option>
                         <option value="vs_bot_white">Play vs Bot (You: White)</option>
                         <option value="vs_bot_black">Play vs Bot (You: Black)</option>
+                        <option value="freeform">Freeform / Setup Board</option>
                     </select>
                 </div>
                 <div class="setting-row" id="row-difficulty" style="display: none;">
@@ -147,6 +148,71 @@
                     <button type="button" class="theme-swatch" data-theme="purple" title="Royal Amethyst"></button>
                     <button type="button" class="theme-swatch" data-theme="classic" title="Marble Classic"></button>
                     <button type="button" class="theme-swatch" data-theme="dark" title="Dark Slate"></button>
+                </div>
+            </div>
+
+            <!-- Freeform Setup Editor Panel -->
+            <div class="freeform-card" id="freeform-card" style="display: none;">
+                <div class="history-header">
+                    <span>Freeform Board Setup</span>
+                    <span class="freeform-badge">Editor</span>
+                </div>
+                <div class="freeform-body">
+                    <div class="editor-tools-row">
+                        <button type="button" id="btn-tool-move" class="editor-tool-btn active" title="Move / Rearrange pieces onto empty squares">
+                            Move
+                        </button>
+                        <button type="button" id="btn-tool-erase" class="editor-tool-btn" title="Tap any square to remove its piece">
+                            Erase
+                        </button>
+                        <button type="button" id="btn-editor-start" class="editor-tool-btn" title="Reset to standard 32-piece starting board">
+                            Reset
+                        </button>
+                        <button type="button" id="btn-editor-clear" class="editor-tool-btn" title="Clear board to only the two Kings">
+                            Clear
+                        </button>
+                    </div>
+
+                    <div class="palette-group">
+                        <div class="palette-row" data-colour="w">
+                            <button type="button" class="palette-piece-btn" data-piece="king" data-colour="w" title="Place White King"><img src="assets/king_w.png" alt="WK"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="queen" data-colour="w" title="Place White Queen"><img src="assets/queen_w.png" alt="WQ"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="rook" data-colour="w" title="Place White Rook"><img src="assets/rook_w.png" alt="WR"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="bishop" data-colour="w" title="Place White Bishop"><img src="assets/bishop_w.png" alt="WB"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="knight" data-colour="w" title="Place White Knight"><img src="assets/knight_w.png" alt="WN"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="pawn" data-colour="w" title="Place White Pawn"><img src="assets/pawn_w.png" alt="WP"></button>
+                        </div>
+                        <div class="palette-row" data-colour="b">
+                            <button type="button" class="palette-piece-btn" data-piece="king" data-colour="b" title="Place Black King"><img src="assets/king_b.png" alt="BK"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="queen" data-colour="b" title="Place Black Queen"><img src="assets/queen_b.png" alt="BQ"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="rook" data-colour="b" title="Place Black Rook"><img src="assets/rook_b.png" alt="BR"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="bishop" data-colour="b" title="Place Black Bishop"><img src="assets/bishop_b.png" alt="BB"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="knight" data-colour="b" title="Place Black Knight"><img src="assets/knight_b.png" alt="BN"></button>
+                            <button type="button" class="palette-piece-btn" data-piece="pawn" data-colour="b" title="Place Black Pawn"><img src="assets/pawn_b.png" alt="BP"></button>
+                        </div>
+                    </div>
+
+                    <div class="freeform-launch-options">
+                        <div class="setting-row">
+                            <label for="select-editor-turn">First Turn</label>
+                            <select id="select-editor-turn">
+                                <option value="w" selected>White to Move</option>
+                                <option value="b">Black to Move</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <label for="select-editor-playmode">Play Mode</label>
+                            <select id="select-editor-playmode">
+                                <option value="pass_and_play" selected>Pass & Play (2 Players)</option>
+                                <option value="vs_bot_white">Play vs Bot (You: White)</option>
+                                <option value="vs_bot_black">Play vs Bot (You: Black)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-play-from-here" class="play-from-here-btn">
+                        Play From Here
+                    </button>
                 </div>
             </div>
 

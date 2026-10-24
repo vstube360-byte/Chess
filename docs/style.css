@@ -788,6 +788,153 @@ html, body {
     background-color: #72a342;
 }
 
+/* Freeform Board Editor Card */
+.freeform-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #161513;
+    border-radius: 6px;
+    border: 1px solid rgba(129, 182, 76, 0.25);
+    overflow-y: auto;
+    min-height: 150px;
+}
+
+.freeform-badge {
+    background-color: rgba(129, 182, 76, 0.16);
+    color: #81B64C;
+    border: 1px solid rgba(129, 182, 76, 0.35);
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    letter-spacing: 0.5px;
+}
+
+.freeform-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
+    flex: 1;
+}
+
+.editor-tools-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+}
+
+.editor-tool-btn {
+    background-color: #23211D;
+    color: #B8B5B0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    height: 30px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+
+.editor-tool-btn:hover {
+    background-color: #2C2925;
+    color: #FFFFFF;
+}
+
+.editor-tool-btn.active {
+    background-color: #222B1B;
+    border-color: #81B64C;
+    color: #81B64C;
+}
+
+.editor-tool-btn#btn-tool-erase.active {
+    background-color: #2B1918;
+    border-color: #E05347;
+    color: #FF7B72;
+}
+
+.palette-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background-color: #1C1A17;
+    padding: 6px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.palette-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+}
+
+.palette-piece-btn {
+    background-color: #262420;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    height: 36px;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.palette-piece-btn:hover {
+    background-color: #322F2A;
+    border-color: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+}
+
+.palette-piece-btn.active {
+    background-color: #222B1B;
+    border-color: #81B64C;
+    box-shadow: 0 0 0 1px #81B64C;
+}
+
+.palette-piece-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.freeform-launch-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 2px;
+}
+
+.play-from-here-btn {
+    width: 100%;
+    height: 36px;
+    margin-top: auto;
+    background-color: #81B64C;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.12s ease;
+}
+
+.play-from-here-btn:hover {
+    background-color: #72a342;
+}
+
+.play-from-here-btn:active {
+    transform: scale(0.98);
+}
+
 /* History Card */
 .history-card {
     flex: 1;

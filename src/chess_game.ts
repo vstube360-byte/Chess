@@ -13,6 +13,7 @@ import { Observer } from "./observer.js";
 import { Subject } from "./subject.js";
 import { BoardBuilder } from "./board_builder.js";
 import { generateAlgebraicNotation } from "./notation.js";
+import { AnalysisBoard } from "./analysis_board.js";
 
 export interface PieceSnapshot {
     name: string;
@@ -680,5 +681,149 @@ export class ChessGame implements Subject {
         this.updateState();
         this.positionHistory = [this.getPositionKey()];
         this.fenHistory = [fen.trim()];
+    }
+
+    public createPieceByName(name: string, colour: string, i: number, j: number): Piece {
+        let piece: Piece;
+        switch (name) {
+            case "pawn": piece = new Pawn(this, colour, i, j); break;
+            case "rook": piece = new Rook(this, colour, i, j); break;
+            case "knight": piece = new Knight(this, colour, i, j); break;
+            case "bishop": piece = new Bishop(this, colour, i, j); break;
+            case "queen": piece = new Queen(this, colour, i, j); break;
+            case "king": piece = new King(this, colour, i, j); break;
+            default: piece = new EmptyPiece(this, i, j); break;
+        }
+        this.normalizePieceHasMoved(piece);
+        return piece;
+    }
+
+    public normalizePieceHasMoved(piece: Piece): void {
+        if (piece instanceof EmptyPiece) return;
+        const { name, colour, i, j } = piece;
+        if (name === "pawn") {
+            piece.hasMoved = !((colour === "w" && i === 6) || (colour === "b" && i === 1));
+        } else if (name === "king") {
+            piece.hasMoved = !((colour === "w" && i === 7 && j === 4) || (colour === "b" && i === 0 && j === 4));
+        } else if (name === "rook") {
+            piece.hasMoved = !((colour === "w" && i === 7 && (j === 0 || j === 7)) || (colour === "b" && i === 0 && (j === 0 || j === 7)));
+        } else {
+            piece.hasMoved = false;
+        }
+    }
+
+    public setEditorPiece(i: number, j: number, name: string, colour: string): boolean {
+        if (!this.validCoordinates(i, j)) return false;
+        this.removePiece(i, j);
+        if (name && name !== "empty") {
+            this.boardState[i][j] = this.createPieceByName(name, colour, i, j);
+        }
+        this.lastMoves = [];
+        this.moveTracker.active = false;
+        this.resetThreats();
+        return true;
+    }
+
+    public moveEditorPiece(fromI: number, fromJ: number, toI: number, toJ: number): boolean {
+        if (!this.validCoordinates(fromI, fromJ) || !this.validCoordinates(toI, toJ)) return false;
+        if (fromI === toI && fromJ === toJ) return false;
+        const src = this.boardState[fromI][fromJ];
+        const dst = this.boardState[toI][toJ];
+        if (!src || src instanceof EmptyPiece) return false;
+        if (!(dst instanceof EmptyPiece)) return false;
+
+        const name = src.name;
+        const colour = src.colour;
+        this.removePiece(fromI, fromJ);
+        this.boardState[toI][toJ] = this.createPieceByName(name, colour, toI, toJ);
+        this.lastMoves = [];
+        this.moveTracker.active = false;
+        this.resetThreats();
+        return true;
+    }
+
+    public clearBoardToKings(): void {
+        let nonKingCount = 0;
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                const p = this.boardState[i][j];
+                if (!(p instanceof EmptyPiece) && !(p instanceof King)) {
+                    nonKingCount++;
+                }
+            }
+        }
+        this.observers = [];
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                this.boardState[i][j] = new EmptyPiece(this, i, j);
+            }
+        }
+        if (nonKingCount > 0) {
+            this.boardState[7][4] = this.createPieceByName("king", "w", 7, 4);
+            this.boardState[0][4] = this.createPieceByName("king", "b", 0, 4);
+        }
+        this.lastMoves = [];
+        this.moveTracker.active = false;
+        this.resetThreats();
+    }
+
+    public validateAndStartCustomGame(startingColour: string = "w"): { valid: boolean; error?: string } {
+        let whiteKings = 0;
+        let blackKings = 0;
+        let whiteKingPos: BoardPosition | null = null;
+        let blackKingPos: BoardPosition | null = null;
+
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                const p = this.boardState[i][j];
+                if (p instanceof EmptyPiece) continue;
+                this.normalizePieceHasMoved(p);
+                if (p instanceof King) {
+                    if (p.colour === "w") {
+                        whiteKings++;
+                        whiteKingPos = new BoardPosition(i, j);
+                    } else {
+                        blackKings++;
+                        blackKingPos = new BoardPosition(i, j);
+                    }
+                } else if (p instanceof Pawn) {
+                    if (i === 0 || i === 7) {
+                        return { valid: false, error: "Pawns cannot be placed on the 1st or 8th rank." };
+                    }
+                }
+            }
+        }
+
+        if (whiteKings !== 1 || blackKings !== 1) {
+            return {
+                valid: false,
+                error: `Board must have 1 White King (${whiteKings}) and 1 Black King (${blackKings}).`
+            };
+        }
+
+        const nonMovingColour = startingColour === "w" ? "b" : "w";
+        const nonMovingKingPos = nonMovingColour === "w" ? whiteKingPos : blackKingPos;
+        const analysis = new AnalysisBoard(this.boardState, nonMovingColour);
+        if (nonMovingKingPos && analysis.kingIsThreatened(nonMovingKingPos)) {
+            const nonMovingName = nonMovingColour === "w" ? "White" : "Black";
+            const startingName = startingColour === "w" ? "White" : "Black";
+            return {
+                valid: false,
+                error: `${nonMovingName} King cannot already be in check when ${startingName} is to move.`
+            };
+        }
+
+        this.turncount = startingColour === "w" ? 0 : 1;
+        this.lastMoves = [];
+        this.moveHistory = [];
+        this.capturedPieces = { w: [], b: [] };
+        this.halfmoveClock = 0;
+        this.state = "ongoing";
+        this.moveTracker.active = false;
+        this.positionHistory = [];
+        this.updateState();
+        this.positionHistory = [this.getPositionKey()];
+        this.fenHistory = [this.toFEN()];
+        return { valid: true };
     }
 }

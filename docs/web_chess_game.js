@@ -26,6 +26,9 @@ export class WebChessGame {
         this.currentTheme = "wood";
         this.viewingPly = null;
         this.endCardDismissed = false;
+        this.editorTool = "move";
+        this.editorPalettePiece = null;
+        this.editorSelectedSquare = null;
 
         this.boardElement = new BoardElement(this, this.boardContainer, this.game);
 
@@ -313,19 +316,17 @@ export class WebChessGame {
         if (selectMode) {
             selectMode.addEventListener("change", () => {
                 this.gameMode = selectMode.value;
-                const isBot = this.gameMode.startsWith("vs_bot");
-
-                if (rowDifficulty) {
-                    rowDifficulty.style.display = isBot ? "flex" : "none";
+                if (this.gameMode === "freeform") {
+                    this.enterFreeformMode();
+                    return;
                 }
-                if (rowTime) {
-                    rowTime.style.display = isBot ? "none" : "flex";
-                }
-
+                this.syncModePanels();
                 this.updateClockVisibility();
                 this.newGame();
             });
         }
+
+        this.bindFreeformControls();
 
         const selectDifficulty = document.getElementById("select-difficulty");
         if (selectDifficulty) {
@@ -461,6 +462,252 @@ export class WebChessGame {
         this.updateUndoRedoButtons();
     }
 
+    syncModePanels() {
+        const isFreeform = this.gameMode === "freeform";
+        const editorPlayModeEl = document.getElementById("select-editor-playmode");
+        const effectiveMode = isFreeform && editorPlayModeEl ? editorPlayModeEl.value : this.gameMode;
+        const isBot = effectiveMode.startsWith("vs_bot");
+
+        const rowDifficulty = document.getElementById("row-difficulty");
+        const rowTime = document.getElementById("row-time");
+        const freeformCard = document.getElementById("freeform-card");
+        const historyCard = document.getElementById("history-card");
+
+        if (rowDifficulty) rowDifficulty.style.display = isBot ? "flex" : "none";
+        if (rowTime) rowTime.style.display = isBot ? "none" : "flex";
+        if (freeformCard) freeformCard.style.display = isFreeform ? "flex" : "none";
+        if (historyCard) historyCard.style.display = isFreeform ? "none" : "flex";
+    }
+
+    bindFreeformControls() {
+        const btnToolMove = document.getElementById("btn-tool-move");
+        const btnToolErase = document.getElementById("btn-tool-erase");
+        const btnEditorStart = document.getElementById("btn-editor-start");
+        const btnEditorClear = document.getElementById("btn-editor-clear");
+        const btnPlayFromHere = document.getElementById("btn-play-from-here");
+        const selectEditorPlayMode = document.getElementById("select-editor-playmode");
+
+        if (btnToolMove) {
+            btnToolMove.addEventListener("click", () => this.setEditorTool("move", null));
+        }
+        if (btnToolErase) {
+            btnToolErase.addEventListener("click", () => this.setEditorTool("erase", null));
+        }
+        if (btnEditorStart) {
+            btnEditorStart.addEventListener("click", () => {
+                this.pushUndoSnapshot();
+                this.game = new ChessGame();
+                this.boardElement.game = this.game;
+                this.editorSelectedSquare = null;
+                this.soundManager.playMove();
+                this.refresh();
+            });
+        }
+        if (btnEditorClear) {
+            btnEditorClear.addEventListener("click", () => {
+                this.pushUndoSnapshot();
+                this.game.clearBoardToKings();
+                this.editorSelectedSquare = null;
+                this.soundManager.playCapture();
+                this.refresh();
+            });
+        }
+        document.querySelectorAll(".palette-piece-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const name = btn.getAttribute("data-piece");
+                const colour = btn.getAttribute("data-colour");
+                if (name && colour) {
+                    this.setEditorTool("place", { name, colour });
+                }
+            });
+        });
+        if (selectEditorPlayMode) {
+            selectEditorPlayMode.addEventListener("change", () => {
+                this.syncModePanels();
+                this.updateClockVisibility();
+            });
+        }
+        if (btnPlayFromHere) {
+            btnPlayFromHere.addEventListener("click", () => this.startCustomGameFromEditor());
+        }
+    }
+
+    setEditorTool(tool, palettePiece = null) {
+        this.editorTool = tool;
+        this.editorPalettePiece = palettePiece;
+        this.editorSelectedSquare = null;
+
+        const btnToolMove = document.getElementById("btn-tool-move");
+        const btnToolErase = document.getElementById("btn-tool-erase");
+        if (btnToolMove) btnToolMove.classList.toggle("active", tool === "move");
+        if (btnToolErase) btnToolErase.classList.toggle("active", tool === "erase");
+
+        document.querySelectorAll(".palette-piece-btn").forEach((btn) => {
+            const match = tool === "place" &&
+                palettePiece &&
+                btn.getAttribute("data-piece") === palettePiece.name &&
+                btn.getAttribute("data-colour") === palettePiece.colour;
+            btn.classList.toggle("active", Boolean(match));
+        });
+
+        this.refresh();
+    }
+
+    enterFreeformMode() {
+        this.cancelPendingAI();
+        this.clock.pause();
+        this.viewingPly = null;
+        this.endCardDismissed = true;
+        this.editorSelectedSquare = null;
+        this.game.state = "ongoing";
+        this.game.lastMoves = [];
+        this.game.moveTracker.active = false;
+        this.game.resetThreats();
+
+        this.setEditorTool("move", null);
+        this.syncModePanels();
+        this.updateClockVisibility();
+        this.refresh();
+    }
+
+    handleEditorSelection(position) {
+        if (this.editorTool === "erase") {
+            this.handleEditorErase(position);
+            return;
+        }
+
+        if (this.editorTool === "place" && this.editorPalettePiece) {
+            const existing = this.game.boardState[position.i]?.[position.j];
+            if (!existing || existing.name === "empty") {
+                this.pushUndoSnapshot();
+                this.game.setEditorPiece(position.i, position.j, this.editorPalettePiece.name, this.editorPalettePiece.colour);
+                this.soundManager.playMove();
+                this.refresh();
+            } else if (existing.name === this.editorPalettePiece.name && existing.colour === this.editorPalettePiece.colour) {
+                this.handleEditorErase(position);
+            } else {
+                const statusEl = document.getElementById("status-bar");
+                if (statusEl) {
+                    statusEl.innerText = "Square is occupied — tap an empty square or use Erase first.";
+                    statusEl.className = "status-bar viewing-history";
+                }
+            }
+            return;
+        }
+
+        // Move tool (click-to-move onto empty squares)
+        const clickedPiece = this.game.boardState[position.i]?.[position.j];
+        if (this.editorSelectedSquare) {
+            if (this.editorSelectedSquare.i === position.i && this.editorSelectedSquare.j === position.j) {
+                this.editorSelectedSquare = null;
+                this.refresh();
+            } else if (!clickedPiece || clickedPiece.name === "empty") {
+                this.handleEditorDragDrop(this.editorSelectedSquare, position);
+            } else {
+                this.editorSelectedSquare = position;
+                this.refresh();
+            }
+        } else if (clickedPiece && clickedPiece.name !== "empty") {
+            this.editorSelectedSquare = position;
+            this.refresh();
+        }
+    }
+
+    handleEditorDragDrop(fromPos, toPos) {
+        const dest = this.game.boardState[toPos.i]?.[toPos.j];
+        if (!dest || dest.name === "empty") {
+            this.pushUndoSnapshot();
+            const moved = this.game.moveEditorPiece(fromPos.i, fromPos.j, toPos.i, toPos.j);
+            this.editorSelectedSquare = null;
+            if (moved) {
+                this.soundManager.playMove();
+            }
+            this.refresh();
+        } else {
+            this.editorSelectedSquare = null;
+            this.refresh();
+            const statusEl = document.getElementById("status-bar");
+            if (statusEl) {
+                statusEl.innerText = "Square is occupied — move to an empty square or use Erase.";
+                statusEl.className = "status-bar viewing-history";
+            }
+        }
+    }
+
+    handleEditorErase(pos) {
+        const existing = this.game.boardState[pos.i]?.[pos.j];
+        if (existing && existing.name !== "empty") {
+            this.pushUndoSnapshot();
+            this.game.setEditorPiece(pos.i, pos.j, "empty", "");
+            this.editorSelectedSquare = null;
+            this.soundManager.playCapture();
+            this.refresh();
+        }
+    }
+
+    startCustomGameFromEditor() {
+        const turnEl = document.getElementById("select-editor-turn");
+        const modeEl = document.getElementById("select-editor-playmode");
+        const startingColour = turnEl ? turnEl.value : "w";
+        const targetMode = modeEl ? modeEl.value : "pass_and_play";
+
+        const validation = this.game.validateAndStartCustomGame(startingColour);
+        if (!validation.valid) {
+            this.soundManager.playCheck();
+            const statusEl = document.getElementById("status-bar");
+            if (statusEl) {
+                statusEl.innerText = validation.error || "Invalid custom board position.";
+                statusEl.className = "status-bar check";
+            }
+            return;
+        }
+
+        this.gameMode = targetMode;
+        const selectMode = document.getElementById("select-mode");
+        if (selectMode) selectMode.value = targetMode;
+
+        this.undoStack = [];
+        this.redoStack = [];
+        this.moveQualities = [];
+        this.viewingPly = null;
+        this.endCardDismissed = false;
+        this.editorSelectedSquare = null;
+
+        this.syncModePanels();
+        this.updateClockVisibility();
+
+        const isBot = this.gameMode.startsWith("vs_bot");
+        if (isBot) {
+            this.clock.pause();
+            this.clock.setTime(0);
+        } else {
+            const selectTime = document.getElementById("select-time");
+            if (selectTime && selectTime.value !== "custom") {
+                const initialSeconds = parseInt(selectTime.value, 10);
+                this.clock.setTime(initialSeconds);
+            }
+        }
+
+        if (this.gameMode === "vs_bot_black") {
+            this.boardElement.isFlipped = true;
+        } else if (this.gameMode === "vs_bot_white") {
+            this.boardElement.isFlipped = false;
+        } else if (this.gameMode === "pass_and_play" && this.autoFlip) {
+            this.boardElement.isFlipped = (startingColour === "b");
+        }
+
+        this.boardElement.rebuildBoard();
+        this.updatePlayerLabels();
+        this.updateUndoRedoButtons();
+        this.soundManager.playMove();
+        this.refresh();
+        this.saveAutoSave();
+
+        if (this.isAITurn()) {
+            this.triggerAIMove();
+        }
+    }
+
     openCustomTimeModal() {
         const modal = document.getElementById("modal-custom-time");
         if (modal) {
@@ -474,6 +721,7 @@ export class WebChessGame {
     }
 
     isAITurn() {
+        if (this.gameMode === "freeform") return false;
         if (this.game.state !== "ongoing" || this.aiThinking) return true;
         const turn = this.game.getTurnPlayer();
         return (this.gameMode === "vs_bot_white" && turn === "b") ||
@@ -483,7 +731,7 @@ export class WebChessGame {
     updateClockVisibility() {
         const topClockEl = document.getElementById("clock-top");
         const bottomClockEl = document.getElementById("clock-bottom");
-        const hideClock = this.gameMode.startsWith("vs_bot");
+        const hideClock = this.gameMode.startsWith("vs_bot") || this.gameMode === "freeform";
 
         if (topClockEl) {
             topClockEl.style.display = hideClock ? "none" : "";
@@ -493,7 +741,7 @@ export class WebChessGame {
         }
 
         const rowTime = document.getElementById("row-time");
-        if (rowTime) {
+        if (rowTime && this.gameMode !== "freeform") {
             rowTime.style.display = hideClock ? "none" : "flex";
         }
     }
@@ -518,9 +766,16 @@ export class WebChessGame {
         this.lastEvalScore = 0;
         this.viewingPly = null;
         this.endCardDismissed = false;
+        this.editorSelectedSquare = null;
         localStorage.removeItem("chess_autosave");
 
+        this.syncModePanels();
         this.updateClockVisibility();
+
+        if (this.gameMode === "freeform") {
+            this.enterFreeformMode();
+            return;
+        }
 
         const isBot = this.gameMode.startsWith("vs_bot");
         if (isBot) {
@@ -794,6 +1049,10 @@ export class WebChessGame {
     }
 
     processSelection(position) {
+        if (this.gameMode === "freeform") {
+            this.handleEditorSelection(position);
+            return;
+        }
         if (this.isAITurn() || this.game.state === "promotion") return;
         if (this.isViewingHistory()) {
             this.scrubToPly(this.getTotalPlies());
@@ -971,6 +1230,16 @@ export class WebChessGame {
         this.updateOpeningBanner();
         this.updateStatusBar();
         this.updateUndoRedoButtons();
+
+        if (this.gameMode === "freeform") {
+            if (this.editorSelectedSquare) {
+                const tile = this.boardElement.grid[this.editorSelectedSquare.i]?.[this.editorSelectedSquare.j];
+                if (tile) tile.classList.add("highlighted");
+            }
+            const existing = this.boardContainer.querySelector(".end-card");
+            if (existing) existing.remove();
+            return;
+        }
 
         if (this.isViewingHistory()) {
             const existing = this.boardContainer.querySelector(".end-card");
@@ -1264,6 +1533,22 @@ export class WebChessGame {
     updateStatusBar() {
         const statusEl = document.getElementById("status-bar");
         if (!statusEl) return;
+
+        if (this.gameMode === "freeform") {
+            if (this.editorTool === "erase") {
+                statusEl.innerText = "Freeform Erase — Tap any square to remove its piece";
+            } else if (this.editorTool === "place" && this.editorPalettePiece) {
+                const colName = this.editorPalettePiece.colour === "w" ? "White" : "Black";
+                const pName = this.editorPalettePiece.name.charAt(0).toUpperCase() + this.editorPalettePiece.name.slice(1);
+                statusEl.innerText = `Placing ${colName} ${pName} — Tap any empty square`;
+            } else if (this.editorSelectedSquare) {
+                statusEl.innerText = "Tap any empty square to move selected piece";
+            } else {
+                statusEl.innerText = "Freeform Setup — Drag/move pieces or pick from palette";
+            }
+            statusEl.className = "status-bar";
+            return;
+        }
 
         if (this.isViewingHistory()) {
             const ply = this.getActivePly();

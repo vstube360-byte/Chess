@@ -65,11 +65,15 @@ export class BoardElement {
 
         if (!this.isDragging && Math.hypot(dx, dy) > 8) {
             const startPiece = this.game.boardState[this.dragStartTile.i][this.dragStartTile.j];
-            if (startPiece && !(startPiece instanceof EmptyPiece) && startPiece.colour === this.game.getTurnPlayer()) {
+            const isFreeformMove = this.parent.gameMode === "freeform" && this.parent.editorTool === "move";
+            const canDragPiece = startPiece && !(startPiece instanceof EmptyPiece) &&
+                (isFreeformMove || startPiece.colour === this.game.getTurnPlayer());
+
+            if (canDragPiece) {
                 this.isDragging = true;
 
                 // Ensure selected
-                if (!this.game.moveTracker.active || this.game.moveTracker.activePiece !== startPiece) {
+                if (!isFreeformMove && (!this.game.moveTracker.active || this.game.moveTracker.activePiece !== startPiece)) {
                     this.parent.processSelection(new BoardPosition(this.dragStartTile.i, this.dragStartTile.j));
                 }
 
@@ -109,7 +113,20 @@ export class BoardElement {
             const elUnder = document.elementFromPoint(e.clientX, e.clientY);
             const targetTile = elUnder ? elUnder.closest(".boardtile") as HTMLElement | null : null;
 
-            if (targetTile && targetTile.dataset.row !== undefined && targetTile.dataset.col !== undefined) {
+            if (this.parent.gameMode === "freeform" && this.parent.editorTool === "move") {
+                if (targetTile && targetTile.dataset.row !== undefined && targetTile.dataset.col !== undefined) {
+                    const targetI = parseInt(targetTile.dataset.row, 10);
+                    const targetJ = parseInt(targetTile.dataset.col, 10);
+                    if (targetI !== this.dragStartTile.i || targetJ !== this.dragStartTile.j) {
+                        this.parent.handleEditorDragDrop(
+                            new BoardPosition(this.dragStartTile.i, this.dragStartTile.j),
+                            new BoardPosition(targetI, targetJ)
+                        );
+                    }
+                } else {
+                    this.parent.handleEditorErase(new BoardPosition(this.dragStartTile.i, this.dragStartTile.j));
+                }
+            } else if (targetTile && targetTile.dataset.row !== undefined && targetTile.dataset.col !== undefined) {
                 const targetI = parseInt(targetTile.dataset.row, 10);
                 const targetJ = parseInt(targetTile.dataset.col, 10);
 
