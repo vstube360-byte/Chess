@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#161512">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="./icon.png">
     <title>Chess</title>
 </head>
 
@@ -34,7 +34,7 @@
             </div>
 
             <!-- Board Area with Real-Time Engine Evaluation Bar -->
-            <div class="board-with-eval">
+            <div class="board-with-eval" id="board-with-eval">
                 <div class="eval-bar-wrapper" id="eval-bar-wrapper" title="Engine Evaluation">
                     <div class="eval-bar-inner">
                         <div class="eval-bar-fill" id="eval-bar-fill" style="height: 50%;"></div>
@@ -42,9 +42,20 @@
                     </div>
                 </div>
 
-                <!-- Board Wrapper with Touch Isolation -->
-                <div class="board-wrapper">
-                    <div class="board-container" id="board-container"></div>
+                <!-- Primary Board Wrapper with Touch Isolation -->
+                <div class="board-column">
+                    <div class="pov-badge" id="pov-badge-primary" style="display: none;">White POV</div>
+                    <div class="board-wrapper">
+                        <div class="board-container" id="board-container"></div>
+                    </div>
+                </div>
+
+                <!-- Secondary Board Wrapper (Dual POV Side-by-Side View) -->
+                <div class="board-column secondary-board-column" id="secondary-board-column" style="display: none;">
+                    <div class="pov-badge" id="pov-badge-secondary">Black POV</div>
+                    <div class="board-wrapper">
+                        <div class="board-container" id="board-container-secondary"></div>
+                    </div>
                 </div>
             </div>
 
@@ -69,8 +80,9 @@
                 <button id="btn-redo" class="tool-btn" title="Redo Move">Redo</button>
                 <button id="btn-hint" class="tool-btn" title="Best Move Hint">Hint</button>
                 <button id="btn-draw" class="tool-btn" title="Offer / Agree to Draw">Draw</button>
-                <button id="btn-autoflip" class="tool-btn active-btn" title="Auto-flip on turn in Pass & Play">Auto</button>
+                <button id="btn-autoflip" class="tool-btn" title="Auto-flip on turn in Pass & Play">Auto</button>
                 <button id="btn-flip-board" class="tool-btn" title="Flip Board">Flip</button>
+                <button id="btn-dual-board" class="tool-btn" title="Dual Board View (Show both White & Black POV side-by-side)">2 Boards</button>
                 <button id="btn-table-mode" class="tool-btn" title="Table Mode (180° Black piece rotation)">Table</button>
                 <button id="btn-sound" class="tool-btn" title="Mute / Unmute"><span id="sound-label">Sound</span></button>
             </div>

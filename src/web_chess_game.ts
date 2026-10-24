@@ -18,13 +18,16 @@ export interface MoveQualityRecord {
 
 export class WebChessGame {
     public boardContainer: HTMLElement;
+    public secondaryBoardContainer: HTMLElement | null = null;
     public game: ChessGame;
     public boardElement: BoardElement;
+    public secondBoardElement: BoardElement | null = null;
     public soundManager: SoundManager;
     public clock: ChessClock;
     public gameMode: "pass_and_play" | "vs_bot_white" | "vs_bot_black" | "freeform" = "pass_and_play";
     public aiDifficulty: string = "bot_1600";
-    public autoFlip: boolean = true;
+    public autoFlip: boolean = false;
+    public dualBoardMode: boolean = false;
     public aiThinking: boolean = false;
 
     // Undo / Redo stacks
@@ -52,6 +55,13 @@ export class WebChessGame {
         this.clock = new ChessClock(600);
         this.game = new ChessGame();
         this.boardElement = new BoardElement(this, this.boardContainer, this.game);
+        this.secondaryBoardContainer = document.getElementById("board-container-secondary");
+        this.secondBoardElement = this.secondaryBoardContainer
+            ? new BoardElement(this, this.secondaryBoardContainer, this.game)
+            : null;
+        if (this.secondBoardElement) {
+            this.secondBoardElement.setFlipped(true);
+        }
 
         this.loadSavedTheme();
         this.setupClockHandlers();
@@ -72,6 +82,9 @@ export class WebChessGame {
         this.currentTheme = theme;
         localStorage.setItem("chess_board_theme", theme);
         this.boardContainer.setAttribute("data-theme", theme);
+        if (this.secondaryBoardContainer) {
+            this.secondaryBoardContainer.setAttribute("data-theme", theme);
+        }
         const selectTheme = document.getElementById("select-theme") as HTMLSelectElement | null;
         if (selectTheme) {
             selectTheme.value = theme;
@@ -79,6 +92,33 @@ export class WebChessGame {
         document.querySelectorAll(".theme-swatch").forEach((btn) => {
             btn.classList.toggle("active", btn.getAttribute("data-theme") === theme);
         });
+    }
+
+    public setDualBoardMode(enabled: boolean): void {
+        this.dualBoardMode = Boolean(enabled);
+        const appContainer = document.querySelector(".app-container");
+        if (appContainer) {
+            appContainer.classList.toggle("dual-board-active", this.dualBoardMode);
+        }
+        const btnDual = document.getElementById("btn-dual-board");
+        if (btnDual) {
+            btnDual.classList.toggle("active-btn", this.dualBoardMode);
+        }
+        const secondaryCol = document.getElementById("secondary-board-column");
+        if (secondaryCol) {
+            secondaryCol.style.display = this.dualBoardMode ? "flex" : "none";
+        }
+        const primaryBadge = document.getElementById("pov-badge-primary");
+        if (primaryBadge) {
+            primaryBadge.style.display = this.dualBoardMode ? "flex" : "none";
+        }
+        if (this.dualBoardMode) {
+            this.boardElement.setFlipped(false);
+            if (this.secondBoardElement) {
+                this.secondBoardElement.setFlipped(true);
+            }
+        }
+        this.refresh();
     }
 
     private tryRestoreAutoSavedGame(): boolean {
@@ -139,11 +179,16 @@ export class WebChessGame {
                 }
                 if (typeof payload.tableMode === "boolean") {
                     this.boardElement.setTableMode(payload.tableMode);
+                    if (this.secondBoardElement) this.secondBoardElement.setTableMode(payload.tableMode);
                     const btnTable = document.getElementById("btn-table-mode");
                     if (btnTable) btnTable.classList.toggle("active-btn", payload.tableMode);
                 }
                 if (typeof payload.isFlipped === "boolean") {
                     this.boardElement.setFlipped(payload.isFlipped);
+                    if (this.secondBoardElement) this.secondBoardElement.setFlipped(!payload.isFlipped);
+                }
+                if (typeof payload.dualBoardMode === "boolean") {
+                    this.setDualBoardMode(payload.dualBoardMode);
                 }
 
                 this.viewingPly = null;
@@ -177,7 +222,8 @@ export class WebChessGame {
                     initialSeconds: this.clock.initialSeconds,
                     isFlipped: this.boardElement.isFlipped,
                     tableMode: this.boardElement.tableMode,
-                    autoFlip: this.autoFlip
+                    autoFlip: this.autoFlip,
+                    dualBoardMode: this.dualBoardMode
                 };
                 localStorage.setItem("chess_autosave", JSON.stringify(payload));
             } else {
@@ -253,13 +299,15 @@ export class WebChessGame {
 
         const btnAutoFlip = document.getElementById("btn-autoflip");
         if (btnAutoFlip) {
+            btnAutoFlip.classList.toggle("active-btn", this.autoFlip);
             btnAutoFlip.addEventListener("click", () => {
                 this.autoFlip = !this.autoFlip;
                 btnAutoFlip.classList.toggle("active-btn", this.autoFlip);
-                if (this.gameMode === "pass_and_play" && this.autoFlip) {
+                if (this.gameMode === "pass_and_play" && this.autoFlip && !this.dualBoardMode) {
                     const shouldFlip = (this.game.getTurnPlayer() === "b");
                     if (this.boardElement.isFlipped !== shouldFlip) {
                         this.boardElement.setFlipped(shouldFlip);
+                        if (this.secondBoardElement) this.secondBoardElement.setFlipped(!shouldFlip);
                         this.updatePlayerLabels();
                         this.refresh();
                     }
@@ -270,9 +318,21 @@ export class WebChessGame {
         const btnFlip = document.getElementById("btn-flip-board");
         if (btnFlip) {
             btnFlip.addEventListener("click", () => {
-                this.boardElement.setFlipped(!this.boardElement.isFlipped);
+                const nextFlipped = !this.boardElement.isFlipped;
+                this.boardElement.setFlipped(nextFlipped);
+                if (this.secondBoardElement) {
+                    this.secondBoardElement.setFlipped(!nextFlipped);
+                }
                 this.updatePlayerLabels();
                 this.refresh();
+            });
+        }
+
+        const btnDual = document.getElementById("btn-dual-board");
+        if (btnDual) {
+            btnDual.addEventListener("click", () => {
+                this.setDualBoardMode(!this.dualBoardMode);
+                this.saveAutoSave();
             });
         }
 
@@ -281,6 +341,9 @@ export class WebChessGame {
             btnTable.addEventListener("click", () => {
                 const nextMode = !this.boardElement.tableMode;
                 this.boardElement.setTableMode(nextMode);
+                if (this.secondBoardElement) {
+                    this.secondBoardElement.setTableMode(nextMode);
+                }
                 btnTable.classList.toggle("active-btn", nextMode);
             });
         }
@@ -521,6 +584,7 @@ export class WebChessGame {
                 this.pushUndoSnapshot();
                 this.game = new ChessGame();
                 this.boardElement.game = this.game;
+                if (this.secondBoardElement) this.secondBoardElement.game = this.game;
                 this.editorSelectedSquare = null;
                 this.soundManager.playMove();
                 this.refresh();
@@ -805,7 +869,9 @@ export class WebChessGame {
             }
         }
 
-        if (this.gameMode === "vs_bot_black") {
+        if (this.dualBoardMode) {
+            this.boardElement.isFlipped = false;
+        } else if (this.gameMode === "vs_bot_black") {
             this.boardElement.isFlipped = true;
         } else if (this.gameMode === "vs_bot_white") {
             this.boardElement.isFlipped = false;
@@ -814,6 +880,10 @@ export class WebChessGame {
         }
 
         this.boardElement.rebuildBoard();
+        if (this.secondBoardElement) {
+            this.secondBoardElement.isFlipped = !this.boardElement.isFlipped;
+            this.secondBoardElement.rebuildBoard();
+        }
         this.updatePlayerLabels();
         this.updateUndoRedoButtons();
         this.soundManager.playMove();
@@ -876,6 +946,9 @@ export class WebChessGame {
         this.cancelPendingAI();
         this.game = new ChessGame();
         this.boardElement.game = this.game;
+        if (this.secondBoardElement) {
+            this.secondBoardElement.game = this.game;
+        }
 
         this.undoStack = [];
         this.redoStack = [];
@@ -906,13 +979,19 @@ export class WebChessGame {
             }
         }
 
-        if (this.gameMode === "vs_bot_black") {
+        if (this.dualBoardMode) {
+            this.boardElement.isFlipped = false;
+        } else if (this.gameMode === "vs_bot_black") {
             this.boardElement.isFlipped = true;
         } else {
             this.boardElement.isFlipped = false;
         }
 
         this.boardElement.rebuildBoard();
+        if (this.secondBoardElement) {
+            this.secondBoardElement.isFlipped = !this.boardElement.isFlipped;
+            this.secondBoardElement.rebuildBoard();
+        }
         this.updatePlayerLabels();
         this.updateUndoRedoButtons();
         this.refresh();
@@ -989,7 +1068,7 @@ export class WebChessGame {
             this.clock.blackTime = targetSnapshot.blackTime;
         }
 
-        if (this.gameMode === "pass_and_play" && this.autoFlip) {
+        if (this.gameMode === "pass_and_play" && this.autoFlip && !this.dualBoardMode) {
             this.boardElement.setFlipped(this.game.getTurnPlayer() === "b");
         }
 
@@ -1025,7 +1104,7 @@ export class WebChessGame {
             this.clock.blackTime = targetSnapshot.blackTime;
         }
 
-        if (this.gameMode === "pass_and_play" && this.autoFlip) {
+        if (this.gameMode === "pass_and_play" && this.autoFlip && !this.dualBoardMode) {
             this.boardElement.setFlipped(this.game.getTurnPlayer() === "b");
         }
 
@@ -1062,6 +1141,9 @@ export class WebChessGame {
 
         if (bestMove) {
             this.boardElement.showHint(bestMove.piece, bestMove.destination);
+            if (this.secondBoardElement && this.dualBoardMode) {
+                this.secondBoardElement.showHint(bestMove.piece, bestMove.destination);
+            }
             const statusEl = document.getElementById("status-bar");
             const fromSq = `${String.fromCharCode(97 + bestMove.piece.j)}${8 - bestMove.piece.i}`;
             const toSq = `${String.fromCharCode(97 + bestMove.destination.j)}${8 - bestMove.destination.i}`;
@@ -1212,7 +1294,7 @@ export class WebChessGame {
             }
             this.playMoveSound();
 
-            if (this.gameMode === "pass_and_play" && this.autoFlip) {
+            if (this.gameMode === "pass_and_play" && this.autoFlip && !this.dualBoardMode) {
                 const turn = this.game.getTurnPlayer();
                 const shouldFlip = (turn === "b");
                 if (this.boardElement.isFlipped !== shouldFlip) {
@@ -1227,6 +1309,9 @@ export class WebChessGame {
 
         if (this.game.moveTracker.active) {
             this.boardElement.highlightActivePiece(piece);
+            if (this.secondBoardElement && this.dualBoardMode) {
+                this.secondBoardElement.highlightActivePiece(piece);
+            }
         }
 
         if (moveMade) {
@@ -1328,7 +1413,7 @@ export class WebChessGame {
             }
             this.playMoveSound();
 
-            if (this.gameMode === "pass_and_play" && this.autoFlip) {
+            if (this.gameMode === "pass_and_play" && this.autoFlip && !this.dualBoardMode) {
                 const turn = this.game.getTurnPlayer();
                 const shouldFlip = (turn === "b");
                 if (this.boardElement.isFlipped !== shouldFlip) {
@@ -1346,6 +1431,16 @@ export class WebChessGame {
     refresh(): void {
         const previewSnap = this.getPreviewSnapshot();
         this.boardElement.repaint(previewSnap);
+        if (this.secondBoardElement && this.dualBoardMode) {
+            if (this.secondBoardElement.game !== this.game) {
+                this.secondBoardElement.game = this.game;
+            }
+            if (this.secondBoardElement.isFlipped === this.boardElement.isFlipped) {
+                this.secondBoardElement.setFlipped(!this.boardElement.isFlipped);
+            } else {
+                this.secondBoardElement.repaint(previewSnap);
+            }
+        }
         this.updatePlayerLabels();
         this.updateCapturedAndMaterial(previewSnap);
         this.updateNotationList();
@@ -1358,6 +1453,10 @@ export class WebChessGame {
             if (this.editorSelectedSquare) {
                 const tile = this.boardElement.grid[this.editorSelectedSquare.i]?.[this.editorSelectedSquare.j];
                 if (tile) tile.classList.add("highlighted");
+                if (this.secondBoardElement && this.dualBoardMode) {
+                    const tile2 = this.secondBoardElement.grid[this.editorSelectedSquare.i]?.[this.editorSelectedSquare.j];
+                    if (tile2) tile2.classList.add("highlighted");
+                }
             }
             const existing = this.boardContainer.querySelector(".end-card");
             if (existing) existing.remove();
@@ -1456,7 +1555,7 @@ export class WebChessGame {
             this.clock.switchTurn(this.game.getTurnPlayer());
         }
 
-        if (this.gameMode === "pass_and_play" && this.autoFlip && this.game.state === "ongoing") {
+        if (this.gameMode === "pass_and_play" && this.autoFlip && !this.dualBoardMode && this.game.state === "ongoing") {
             const turn = this.game.getTurnPlayer();
             const shouldFlip = (turn === "b");
             if (this.boardElement.isFlipped !== shouldFlip) {
@@ -1493,6 +1592,21 @@ export class WebChessGame {
 
         if (topNameEl) topNameEl.innerText = topLabel;
         if (bottomNameEl) bottomNameEl.innerText = bottomLabel;
+
+        const primaryBadge = document.getElementById("pov-badge-primary");
+        const secondaryBadge = document.getElementById("pov-badge-secondary");
+        const activeTurn = this.game.getTurnPlayer();
+        const primaryColour = isFlipped ? "b" : "w";
+        const secondaryColour = isFlipped ? "w" : "b";
+
+        if (primaryBadge) {
+            primaryBadge.innerText = isFlipped ? "Black POV" : "White POV";
+            primaryBadge.classList.toggle("active-pov", this.gameMode !== "freeform" && activeTurn === primaryColour);
+        }
+        if (secondaryBadge) {
+            secondaryBadge.innerText = isFlipped ? "White POV" : "Black POV";
+            secondaryBadge.classList.toggle("active-pov", this.gameMode !== "freeform" && activeTurn === secondaryColour);
+        }
     }
 
     updateCapturedAndMaterial(previewSnap: GameSnapshot | null = null): void {

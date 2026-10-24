@@ -208,17 +208,21 @@ export class BoardElement {
     }
 
     clearPreviousBoard(skipCaptureFade: boolean = false): void {
-        document.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
-        document.querySelectorAll(".markerdot").forEach(el => el.remove());
-        document.querySelectorAll(".markercircle").forEach(el => el.remove());
-        document.querySelectorAll(".last-move").forEach(el => el.classList.remove("last-move"));
-        document.querySelectorAll(".hint-tile").forEach(el => el.classList.remove("hint-tile"));
-        document.querySelectorAll(".fading-piece").forEach(el => el.remove());
+        this.boardContainer.querySelectorAll(".highlighted").forEach(el => el.classList.remove("highlighted"));
+        this.boardContainer.querySelectorAll(".markerdot").forEach(el => el.remove());
+        this.boardContainer.querySelectorAll(".markercircle").forEach(el => el.remove());
+        this.boardContainer.querySelectorAll(".last-move").forEach(el => el.classList.remove("last-move"));
+        this.boardContainer.querySelectorAll(".hint-tile").forEach(el => el.classList.remove("hint-tile"));
+        this.boardContainer.querySelectorAll(".fading-piece").forEach(el => el.remove());
 
         let capturedPos: BoardPosition | null = null;
         if (!skipCaptureFade && this.game.lastMoves) {
-            const unhandledMove = this.game.lastMoves.find(m => !m.animated && m.captured);
+            const unhandledMove: any = this.game.lastMoves.find(
+                (m: any) => (!m.captureAnimatedBoards || !m.captureAnimatedBoards.has(this)) && m.captured
+            );
             if (unhandledMove && unhandledMove.captured) {
+                if (!unhandledMove.captureAnimatedBoards) unhandledMove.captureAnimatedBoards = new Set();
+                unhandledMove.captureAnimatedBoards.add(this);
                 capturedPos = unhandledMove.captured.position;
             }
         }
@@ -279,10 +283,12 @@ export class BoardElement {
         tile.appendChild(img);
 
         if (this.game.lastMoves) {
-            const move = this.game.lastMoves.find(
-                m => !m.animated && m.to.i === piece.i && m.to.j === piece.j
+            const move: any = this.game.lastMoves.find(
+                (m: any) => (!m.animatedBoards || !m.animatedBoards.has(this)) && m.to.i === piece.i && m.to.j === piece.j
             );
             if (move) {
+                if (!move.animatedBoards) move.animatedBoards = new Set();
+                move.animatedBoards.add(this);
                 move.animated = true;
                 this.animatePieceMove(img, move.from, move.to, piece.colour);
             }
@@ -397,6 +403,7 @@ export class BoardElement {
 
         tile.addEventListener("pointerdown", (e: PointerEvent) => {
             if (this.parent.isAITurn() || (this.parent.isViewingHistory && this.parent.isViewingHistory())) return;
+            BoardElement.activeInstance = this;
             this.activePointerId = e.pointerId;
             this.dragStartTile = { i, j };
             this.dragStartPos = { x: e.clientX, y: e.clientY };
@@ -421,7 +428,7 @@ export class BoardElement {
     }
 
     showHint(from: BoardPosition, to: BoardPosition): void {
-        document.querySelectorAll(".hint-tile").forEach(el => el.classList.remove("hint-tile"));
+        this.boardContainer.querySelectorAll(".hint-tile").forEach(el => el.classList.remove("hint-tile"));
         const fromTile = this.grid[from.i]?.[from.j];
         const toTile = this.grid[to.i]?.[to.j];
         if (fromTile) fromTile.classList.add("hint-tile");

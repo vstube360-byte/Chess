@@ -176,10 +176,65 @@ html, body {
 .board-with-eval {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
     position: relative;
+}
+
+.board-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.pov-badge {
+    width: 100%;
+    padding: 4px 10px;
+    background: linear-gradient(180deg, #25221E 0%, #1B1916 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #A8A5A0;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.16s ease;
+}
+
+.pov-badge::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.14);
+    transition: all 0.16s ease;
+}
+
+.pov-badge.active-pov {
+    color: #FFFFFF;
+    border-color: rgba(129, 182, 76, 0.55);
+    background: linear-gradient(180deg, #252E1E 0%, #1C2317 100%);
+    box-shadow: 0 0 10px rgba(129, 182, 76, 0.18);
+}
+
+.pov-badge.active-pov::after {
+    background-color: #81B64C;
+    box-shadow: 0 0 6px #81B64C;
+}
+
+.app-container.dual-board-active {
+    --board-size: clamp(230px, min(68vh, 68dvh, calc((100vw - 410px) / 2)), 520px);
+}
+
+.app-container.dual-board-active .player-bar,
+.app-container.dual-board-active .opening-banner {
+    width: calc(var(--board-size) * 2 + 28px);
+    max-width: calc(var(--board-size) * 2 + 28px);
 }
 
 /* Minimalist Evaluation Bar */
@@ -1540,6 +1595,10 @@ html, body {
         --board-size: clamp(250px, min(92vw, 60vh), 640px);
     }
 
+    .app-container.dual-board-active {
+        --board-size: clamp(150px, calc((94vw - 26px) / 2), 420px);
+    }
+
     .app-container {
         flex-direction: column;
         height: auto;
@@ -1553,6 +1612,12 @@ html, body {
     .opening-banner {
         width: var(--board-size);
         max-width: var(--board-size);
+    }
+
+    .app-container.dual-board-active .player-bar,
+    .app-container.dual-board-active .opening-banner {
+        width: calc(var(--board-size) * 2 + 26px);
+        max-width: 95vw;
     }
 
     .board-container {
